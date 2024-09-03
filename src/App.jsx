@@ -519,6 +519,7 @@ const App = () => {
     textAlign: 'center', // center align text
     cursor: 'pointer', // change cursor to pointer on hover
     minWidth: '20px', // Add a fixed minimum width to ensure consistency
+    transition: 'background-color 0.5s ease', // to make less noticeble with the difference of time that path blocking happens and added greener cells shows. it looks like fade in
   };
 
   const gridItemStyleHover = {
