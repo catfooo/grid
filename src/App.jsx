@@ -15,6 +15,7 @@ const App = () => {
   const [numColumns, setNumColumns] = useState(3); // State to track number of columns
   const [closedPaths, setClosedPaths] = useState([]);
   const [lastClicked, setLastClicked] = useState([]); // State to track the order of clicks
+  const [loading, setLoading] = useState(false);
 
   
   useEffect(() => {
@@ -163,6 +164,7 @@ const App = () => {
     // Handle successful login
     console.log('Login Success:', response);
     setIsLoggedIn(true);
+    setLoading(true); // Set loading state to true
 
     // Extract the ID token (credential) from the response
     const idToken = response.credential;
@@ -192,9 +194,10 @@ const App = () => {
     if (res.ok) {
       const data = await res.json();
       console.log('Server response:', data);
+      setLoading(false); // End loading
     } else {
       console.error('Server responded with an error:', res.statusText);
-    }
+    } 
   };
 
   const handleLoginFailure = (error) => {
@@ -209,6 +212,9 @@ const App = () => {
   };
 
   const handleItemClick = async (index) => {
+    if (loading) return; // Prevent clicks while loading
+
+    
 
     const clickedValue = gridItems[index];
 
@@ -272,6 +278,8 @@ const App = () => {
             console.error(`Error incrementing ${action}:`, error);
         }
     }
+
+  
 
     console.log("Clicked cell number:", index + 1); // Log the number of the clicked cell
     const newGridItems = [...gridItems];
@@ -551,23 +559,30 @@ const App = () => {
             {gridItems.map((item, index) => (
               <div
                 key={index}
-                style={
-                  item === '' 
+                style={{
+                  ...(item === '' 
                     ? { ...gridItemStyle, visibility: 'hidden' } 
                     : (item === 'O' 
-                    ? gridItemStyleHover 
-                    : closedPaths.includes(index)
-                    ? gridItemLightGreenStyle
-                    : item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '12' || item === '13'
-                    ? gridItemGreenStyle
-                    : gridItemStyle)
-                }
+                      ? gridItemStyleHover 
+                      : closedPaths.includes(index)
+                      ? gridItemLightGreenStyle
+                      : (item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '12' || item === '13')
+                      ? gridItemGreenStyle
+                      : gridItemStyle)
+                  ),
+                  pointerEvents: loading ? 'none' : 'auto'
+                }}
                 // onClick={() => handleItemClick(index)}
                 onClick={
                   item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '12' || item === '13'
                   ? null // Disable click for green items
                   : () => handleItemClick(index)
                 }
+                // // Disable pointer events when loading
+                // style={{
+                //   pointerEvents: loading ? 'none' : 'auto',
+                //   ...gridItemStyle,
+                // }}
               >
                 {item}
               </div>
