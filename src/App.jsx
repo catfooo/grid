@@ -110,7 +110,7 @@ const App = () => {
   
         if (!config) {
           console.warn('No action defined for', lastClicked);
-          setLastClicked([]);
+          // setLastClicked([]);
           return;
         }
   
@@ -218,6 +218,28 @@ const App = () => {
 
     const clickedValue = gridItems[index];
 
+     // Check if '12' should be unclickable if 4, 2 or 8 click have been made
+  if (['4', '2', '8'].includes(lastClicked[0]) && clickedValue === '12') {
+    console.log("Cell 12 is unclickable because '4', '2', or '8' was clicked before.");
+    return; // Prevent clicking on '12'
+  }
+      
+     // 6-6
+     // Check if '12' should be unclickable if two clicks have been made
+     console.log('lastclicked (before update), length, clickedvalue:', lastClicked, lastClicked.length, clickedValue)
+     if (lastClicked.length === 2 && clickedValue === '12') {
+      console.log("Cell 12 is unclickable because two cells were clicked."); // this is likely not happening bcs at return, onclick restricts clicking
+      return; // Prevent clicking on '12'
+  }
+
+      // Check if the clicked value is '12', then replace it with '6'
+  if (clickedValue === '12') {
+    const newGridItems = [...gridItems];
+    newGridItems[index] = '6'; // Replace '12' with '6'
+    setGridItems(newGridItems); // Update the grid state
+    return; // Exit early since no further action is needed
+  }
+
     if (clickedValue === '2' || clickedValue === '4' || clickedValue === '5' || clickedValue === '6' || clickedValue === '8') {
         setLastClicked(prev => {
             if (prev.length === 2) {
@@ -281,7 +303,7 @@ const App = () => {
 
   
 
-    console.log("Clicked cell number:", index + 1); // Log the number of the clicked cell
+    console.log("Clicked(fetched) cell number(index+1):", index + 1); // Log the number of the clicked cell
     const newGridItems = [...gridItems];
     const emptyCells = []; // Array to store indices of empty cells
 
@@ -549,6 +571,17 @@ const App = () => {
     cursor: 'default', // Change cursor to default arrow
   };
 
+  const gridItem12Style = {
+    ...gridItemStyle,
+    backgroundColor: 'green',
+  }
+
+  const gridItem12NoclickStyle = {
+    ...gridItemStyle,
+    cursor: 'default',
+    backgroundColor: 'green',
+  }
+
   return (
     <GoogleOAuthProvider clientId={clientId}>
     <div>
@@ -566,16 +599,22 @@ const App = () => {
                       ? gridItemStyleHover 
                       : closedPaths.includes(index)
                       ? gridItemLightGreenStyle
-                      : (item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '12' || item === '13')
+                      : (item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '13')
                       ? gridItemGreenStyle
+                      :item === '12' && lastClicked.length === 2
+                      ? gridItem12NoclickStyle
+                      :item === '12'
+                      ? gridItem12Style
                       : gridItemStyle)
                   ),
                   pointerEvents: loading ? 'none' : 'auto'
                 }}
                 // onClick={() => handleItemClick(index)}
                 onClick={
-                  item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '12' || item === '13'
+                  item === '1' || item === '3' || item === '7' || item === '9' || item === '11' || item === '13'
                   ? null // Disable click for green items
+                  : item === '12' && lastClicked.length === 2
+                  ? null // Disable click for '12' if two cells are clicked
                   : () => handleItemClick(index)
                 }
                 // // Disable pointer events when loading
