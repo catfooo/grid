@@ -42,7 +42,7 @@ const User = mongoose.model('User', userSchema);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    console.log('Health check endpoint hit');
+    // console.log('Health check endpoint hit');
     res.status(200).send('Server is healthy');
   });  
 
@@ -107,7 +107,7 @@ const pingServer = async () => {
   try {
     const response = await fetch(serverUrl);
     if (response.ok) {
-      console.log('Server pinged successfully');
+    //   console.log('Server pinged successfully');
     } else {
       console.log('Ping failed:', response.status);
     }
@@ -116,7 +116,7 @@ const pingServer = async () => {
   }
 };
 
-console.log('Starting ping server');
+// console.log('Starting ping server');
 
 pingServer(); // Call once immediately
 // Ping the server every 5 minutes
