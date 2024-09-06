@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    console.log('Health check endpoint hit');
+    res.status(200).send('Server is healthy');
+  });  
+
 // API endpoint to save user data
 app.post('/', async (req, res) => {
     const { googleId } = req.body;
@@ -93,7 +99,9 @@ app.post('/updateGrid', async (req, res) => {
     }
 });
 
-const serverUrl = 'https://grid-s0tx.onrender.com'; // Replace with your actual server URL
+const serverUrl = 'https://grid-s0tx.onrender.com/health'; // Replace with your actual server URL
+// const serverUrl = 'http://localhost:5001/health'; // Point to your local server URL
+
 
 const pingServer = async () => {
   try {
@@ -108,6 +116,9 @@ const pingServer = async () => {
   }
 };
 
+console.log('Starting ping server');
+
+pingServer(); // Call once immediately
 // Ping the server every 5 minutes
 setInterval(pingServer, 5 * 60 * 1000); // 5 minutes
 
