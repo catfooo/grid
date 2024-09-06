@@ -5,9 +5,10 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect } from 'react';
 
-// git
-// need to app0-27 to be env or gitignore..
+// case 6-6, return
 const clientId = import.meta.env.VITE_ID
+// const server = 'http://localhost:5001'
+const server = 'https://grid-s0tx.onrender.com'
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -130,7 +131,7 @@ const App = () => {
   
         // Perform fetch request
         try {
-          const res = await fetch('https://grid-s0tx.onrender.com/updateGrid', {
+          const res = await fetch(`${server}/updateGrid`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -183,7 +184,7 @@ const App = () => {
     localStorage.setItem('googleId', user.googleId); // Store googleId locally
 
      // Send user data to your backend server
-     const res = await fetch('https://grid-s0tx.onrender.com/', {
+     const res = await fetch(server, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -282,7 +283,7 @@ const App = () => {
 
     if (action) {
         try {
-            const res = await fetch('https://grid-s0tx.onrender.com/updateGrid', {
+            const res = await fetch(`${server}/updateGrid`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

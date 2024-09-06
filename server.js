@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
+import fetch from 'node-fetch'
 
 //create the express app
 const app = express();
@@ -91,6 +92,24 @@ app.post('/updateGrid', async (req, res) => {
         res.status(500).json({ message: 'Error updating grid' });
     }
 });
+
+const serverUrl = 'https://grid-s0tx.onrender.com'; // Replace with your actual server URL
+
+const pingServer = async () => {
+  try {
+    const response = await fetch(serverUrl);
+    if (response.ok) {
+      console.log('Server pinged successfully');
+    } else {
+      console.log('Ping failed:', response.status);
+    }
+  } catch (error) {
+    console.error('Error pinging server:', error);
+  }
+};
+
+// Ping the server every 5 minutes
+setInterval(pingServer, 5 * 60 * 1000); // 5 minutes
 
 // Start server
 app.listen(port, () => {
