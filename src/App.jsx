@@ -4,8 +4,29 @@ import { useState } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect } from 'react';
+import { useRef } from 'react';
+import { createOverlayEffect } from './overlayEffect';
+import {
+  gridContainerStyle,
+  gridItemStyle,
+  gridItemStyleHover,
+  gridItemGreenStyle,
+  gridItemLightGreenStyle,
+  gridItem12Style,
+  gridItem12NoclickStyle,
+} from './styles';
+
 
 // case 6-6, return
+// case 6-5-6-6? return?
+// if user do 5, user dont erase 111213 by number. they do by index (solved)
+// if so, this should be differ by case 2468 (done)
+// if case is 665, things need to be added from 6-5.
+// 6(from 5) need to be 12, and instead of 147 it need 258
+// 전 판에 냠냠했던거 기억해서 돌려주기 전 판에 클릭했던거 기억해서 돌려주기(5가 6으로 대체되는것은 전판에 6을 클릭해서야)
+// case 6-6, it shows 359 instead of 369. 5 represents return though..
+// instead 147, return 258
+// need to make false to openedpath true somewhere, but dk how. prolly dont need to change?
 const clientId = import.meta.env.VITE_ID
 // const server = 'http://localhost:5001'
 const server = 'https://grid-s0tx.onrender.com'
@@ -17,49 +38,24 @@ const App = () => {
   const [closedPaths, setClosedPaths] = useState([]);
   const [lastClicked, setLastClicked] = useState([]); // State to track the order of clicks
   const [loading, setLoading] = useState(false);
+  const [openedPaths, setOpenedPaths] = useState([])
+  const [emptyCellValues, setEmptyCellValues] = useState([]);
+
+  // Refs to store previous and current values of emptyCellValues
+const emptyCellValuesRef = useRef([]);
+const previousEmptyCellValuesRef = useRef([]);
+const initialOpenedPathsTrue = useRef(false);
+
+
 
   
   useEffect(() => {
     if (isLoggedIn) {
-      const body = document.body;
-      if (body) {
-        // Create an overlay for the fade effect
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.background = 'radial-gradient(circle at center, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 1) 100%)';
-        overlay.style.transition = 'opacity 10s ease-out'; // Slower transition duration
-        overlay.style.zIndex = '9999'; // Ensure the overlay is on top
-        overlay.style.pointerEvents = 'none'; // Allow interactions behind the overlay
-        overlay.style.opacity = '1'; // Start with opacity 1
-        body.appendChild(overlay);
-
-        // Trigger fade out on mount
-        setTimeout(() => {
-          overlay.style.opacity = '0';
-        }, 100); // Slight delay to ensure the effect is visible
-
-        // Remove the overlay after the animation completes
-        const handleTransitionEnd = () => {
-          body.removeChild(overlay);
-        };
-        overlay.addEventListener('transitionend', handleTransitionEnd);
-
-        // Cleanup function to remove overlay if component unmounts or isLoggedIn changes
-        return () => {
-          overlay.removeEventListener('transitionend', handleTransitionEnd);
-          if (body.contains(overlay)) {
-            body.removeChild(overlay);
-          }
-        };
-      }
+      const cleanupOverlay = createOverlayEffect();
     }
   }, [isLoggedIn]); // Dependency array with isLoggedIn
 
-  // see app26 if this is unreadable...
+  // '5' mec. see app26 if this is unreadable...
   useEffect(() => {
     const updateGrid = async () => {
       if (lastClicked.length === 2) {
@@ -69,38 +65,38 @@ const App = () => {
         const configurations = {
           '6-5': {
             additions: [
-              { index: 0, value: '1' },
-              { index: 3, value: '4' },
-              { index: 6, value: '7' }
+              { index: 0, value: previousEmptyCellValuesRef.current[0] },
+              { index: 3, value: previousEmptyCellValuesRef.current[1] },
+              { index: 6, value: previousEmptyCellValuesRef.current[2] }
             ],
-            replace: '6',
+            subtractions: [2, 7, 8],
             action: '-row',
           },
           '4-5': {
             additions: [
-              { index: 2, value: '3' },
-              { index: 5, value: '6' },
-              { index: 8, value: '9' }
+              { index: 2, value: previousEmptyCellValuesRef.current[0] },
+              { index: 5, value: previousEmptyCellValuesRef.current[1] },
+              { index: 8, value: previousEmptyCellValuesRef.current[2] }
             ],
-            replace: '4',
+            subtractions: [0, 3, 6],
             action: 'row',
           },
           '2-5': {
             additions: [
-              { index: 6, value: '7' },
-              { index: 7, value: '8' },
-              { index: 8, value: '9' }
+              { index: 6, value: previousEmptyCellValuesRef.current[0] },
+              { index: 7, value: previousEmptyCellValuesRef.current[1] },
+              { index: 8, value: previousEmptyCellValuesRef.current[2] }
             ],
-            replace: '2',
+            subtractions: [0, 1, 2],
             action: '-column',
           },
           '8-5': {
             additions: [
-              { index: 0, value: '1' },
-              { index: 1, value: '2' },
-              { index: 2, value: '3' }
+              { index: 0, value: previousEmptyCellValuesRef.current[0] },
+              { index: 1, value: previousEmptyCellValuesRef.current[1] },
+              { index: 2, value: previousEmptyCellValuesRef.current[2] }
             ],
-            replace: '8',
+            subtractions: [6, 7, 8],
             action: 'column',
           },
         };
@@ -115,16 +111,63 @@ const App = () => {
           return;
         }
   
+        // just to log
+        if (initialOpenedPathsTrue.current) {
+          console.log('First case happened: using lastClicked[0] for replacement. Value:', lastClicked[0]);
+        } else if ((Array.isArray(openedPaths) && openedPaths.length) || openedPaths === true) {
+          console.log('Second case happened: using "12" for replacement.');
+        } else {
+          console.log('Third case happened: using lastClicked[0] for replacement. Value:', lastClicked[0]);
+        }
+
+        // Extract the first number from lastClicked as the replacement value
+        // const replaceValue = openedPaths ? '12' : lastClicked[0];
+        // const replaceValue = (Array.isArray(openedPaths) && openedPaths.length) || openedPaths === true ? '12' : lastClicked[0];
+        const replaceValue = initialOpenedPathsTrue.current 
+        ? lastClicked[0] 
+        : ((Array.isArray(openedPaths) && openedPaths.length) || openedPaths === true ? '12' : lastClicked[0]);
+        console.log('useeffect:', openedPaths, replaceValue)
+
         // Filter and update grid items
         console.log('Before filtering:', gridItems);
-        let updatedGridItems = gridItems.filter(item => !['11', '12', '13'].includes(item));
+        // let updatedGridItems = gridItems.filter(item => !['11', '12', '13'].includes(item));
+        let updatedGridItems = gridItems.filter((_, index) => !config.subtractions.includes(index));
+        // (_, index) is used when ignore the value but use the index instead.
         console.log('After filtering:', updatedGridItems);
   
         // Add new items and replace specified item
         config.additions.forEach(({ index, value }) => {
           updatedGridItems.splice(index, 0, value);
         });
-        updatedGridItems = updatedGridItems.map(item => (item === '5' ? config.replace : item));
+
+        // Log the list of additions
+console.log('Additions:', config.additions);
+// Log the grid items before the replacement operation
+console.log('Before replacement checking12, updatedGridItems:', updatedGridItems);
+
+        // updatedGridItems = updatedGridItems.map(item => (item === '5' ? config.replace : item));
+        // Use the first number in lastClicked as the replacement
+        // updatedGridItems = updatedGridItems.map(item => (item === '5' ? replaceValue : item));
+        // Determine if '12' is in additions
+        const hasTwelveInAdditions = config.additions.some(item => item.value === '12');
+        console.log('has12add', hasTwelveInAdditions)
+        // Use 5 instead of replaceValue if '12' is in additions
+        updatedGridItems = updatedGridItems.map(item => (item === '5' ? (hasTwelveInAdditions ? '5' : replaceValue) : item));
+
+        // wanted to switch this from hastwelveinadditions, but have to think more
+        // if (gridItems.includes(12)) {
+        //   updatedGridItems = updatedGridItems.map(item => (item === '5' ? replaceValue : item));
+        // }
+
+        // Log the updated grid items
+console.log('Updated grid items after checking 12replace:', updatedGridItems);
+
+// // Update openedPaths based on the presence of '12'
+// if (!hasTwelveInAdditions) {
+//   setOpenedPaths(false); // Set to false if '12' is in additions
+// }
+
+
   
         console.log('After updating:', updatedGridItems);
         setGridItems(updatedGridItems);
@@ -151,15 +194,25 @@ const App = () => {
   
         // Clear the lastClicked array
         setLastClicked([]);
+
+    //     // Clear the ref after the first use
+    // if (initialOpenedPathsTrue.current) {
+    //   // Do this only once when you no longer need `12`
+    //   initialOpenedPathsTrue.current = false;
+    // }
       }
     };
   
     updateGrid();
-  }, [lastClicked]);
+  }, [lastClicked, openedPaths]);
 
   useEffect(() => {
     console.log('Updated gridItems:', gridItems); // Log updated grid items whenever gridItems changes
   }, [gridItems]);
+
+  useEffect(() => {
+    console.log('openedPaths has changed:', openedPaths);
+  }, [openedPaths]);
 
   const handleLoginSuccess = async (response) => {
     // Handle successful login
@@ -219,11 +272,26 @@ const App = () => {
 
     const clickedValue = gridItems[index];
 
-     // Check if '12' should be unclickable if 4, 2 or 8 click have been made
-  if (['4', '2', '8'].includes(lastClicked[0]) && clickedValue === '12') {
-    console.log("Cell 12 is unclickable because '4', '2', or '8' was clicked before.");
-    return; // Prevent clicking on '12'
-  }
+      // Update `openedPaths` and track if it was set to true
+      if (openedPaths === true) {
+        if (!initialOpenedPathsTrue.current) {
+          // Set to true on first click
+          initialOpenedPathsTrue.current = true;
+          console.log('openedPaths was true, setting initialOpenedPathsTrue.current to true');
+        }
+        // Handle logic for initial openedPaths being true
+      }
+  
+
+    // if (openedPaths) {
+    //   setOpenedPaths(false); // Reset flag after processing
+    // }
+
+  //    // Check if '12' should be unclickable if 4, 2 or 8 click have been made
+  // if (['4', '2', '8'].includes(lastClicked[0]) && clickedValue === '12') {
+  //   console.log("Cell 12 is unclickable because '4', '2', or '8' was clicked before.");
+  //   return; // Prevent clicking on '12'
+  // }
       
      // 6-6
      // Check if '12' should be unclickable if two clicks have been made
@@ -235,9 +303,19 @@ const App = () => {
 
       // Check if the clicked value is '12', then replace it with '6'
   if (clickedValue === '12') {
-    const newGridItems = [...gridItems];
-    newGridItems[index] = '6'; // Replace '12' with '6'
-    setGridItems(newGridItems); // Update the grid state
+    // const newGridItems = [...gridItems];
+    // newGridItems[index] = '6'; // Replace '12' with '6'
+    // setGridItems(newGridItems); // Update the grid state
+     // Ensure there is a last clicked value to replace '12'
+     if (lastClicked.length > 0) {
+      const replacementValue = lastClicked[lastClicked.length - 1]; // Get the most recent value from lastClicked
+      const newGridItems = [...gridItems];
+      newGridItems[index] = replacementValue; // Replace '12' with the last clicked value
+      setGridItems(newGridItems); // Update the grid state
+      setOpenedPaths(true) // set the flag to track this replaced value was originally '12'
+      console.log('if12:', openedPaths)
+    }
+
     return; // Exit early since no further action is needed
   }
 
@@ -331,6 +409,17 @@ const App = () => {
         emptyCells.push(i); // Add index to empty cells list
       }
     });
+
+    console.log("List of empty cells:", emptyCells); // Log list of empty cells 
+
+    // Log the values of the empty cells
+const emptyCellValues = emptyCells.map(cellIndex => gridItems[cellIndex]);
+console.log("Values of empty cells:", emptyCellValues);
+// Update state
+setEmptyCellValues(emptyCellValues);
+// Update refs
+previousEmptyCellValuesRef.current = emptyCellValuesRef.current;
+emptyCellValuesRef.current = emptyCellValues;
 
     // Set the clicked cell as 'O'
     newGridItems[index] = 'O';
@@ -531,57 +620,9 @@ const App = () => {
 
     setGridItems(newGridItems);
 
-    console.log("List of empty cells:", emptyCells); // Log list of empty cells
-    console.log("Grid items after click:", newGridItems); // Log grid items after click
+    console.log("List of empty cells:", emptyCells); // Log list of empty cells // not executing bcs of return
+    console.log("Grid items after click:", newGridItems); // Log grid items after click // not executing bcs of return
   };
-
-  const gridContainerStyle = {
-    display: 'grid',
-    gridTemplateColumns: `repeat(${numColumns}, 1fr)`, // Dynamic number of columns
-    gridGap: '10px', // gap between grid items
-    marginBottom: '20px', // add margin bottom to create space
-  };
-
-  const gridItemStyle = {
-    // backgroundColor: '#ccc', // background color of each grid item(gray)
-    // backgroundColor: '#D2B48C', // light brown background color of each grid item
-    backgroundColor: '#C2B280', // sand dollar background color of each grid item
-    padding: '20px', // padding inside each grid item
-    textAlign: 'center', // center align text
-    cursor: 'pointer', // change cursor to pointer on hover
-    minWidth: '20px', // Add a fixed minimum width to ensure consistency
-    transition: 'background-color 0.5s ease', // to make less noticeble with the difference of time that path blocking happens and added greener cells shows. it looks like fade in
-  };
-
-  const gridItemStyleHover = {
-    ...gridItemStyle,
-    cursor: 'default', // Change cursor to default arrow
-  };
-
-  const gridItemGreenStyle = {
-    ...gridItemStyle,
-    backgroundColor: 'green', // green background color for 1, 3, 7, 9 + ...
-    cursor: 'default', // Change cursor to default arrow
-  };
-
-  // for closed path
-  const gridItemLightGreenStyle = {
-    ...gridItemStyle,
-    backgroundColor: '#A89F91', // Deep beige background color for closed path 6-(2,8), ...
-    // backgroundColor: 'lightgreen', // lightgreen background color for closed path 6-(2,8)
-    cursor: 'default', // Change cursor to default arrow
-  };
-
-  const gridItem12Style = {
-    ...gridItemStyle,
-    backgroundColor: 'green',
-  }
-
-  const gridItem12NoclickStyle = {
-    ...gridItemStyle,
-    cursor: 'default',
-    backgroundColor: 'green',
-  }
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
@@ -589,7 +630,7 @@ const App = () => {
       <h1> </h1>
       {isLoggedIn ? (
         <>
-          <div style={gridContainerStyle}>
+          <div style={gridContainerStyle(numColumns)}>
             {gridItems.map((item, index) => (
               <div
                 key={index}
